@@ -1,7 +1,7 @@
 .POSIX:
 
 .DEFAULT_GOAL := all
-all: images ui operator manifest
+all: images operator manifest
 .PHONY: all
 
 # Use this empty target to force execution of a rule
@@ -34,7 +34,6 @@ ISO ?= $(BUILD_ROOT)/$(PRODUCT_LOWERNAME)-$(VERSION_FULL).iso
 
 # Source paths
 IMAGES_SRC ?= $(PWD)/images
-UI_SRC ?= $(PWD)/ui
 OPERATOR_SRC ?= $(PWD)/operator
 
 # Binary paths and options
@@ -58,10 +57,9 @@ BUILD_ARGS ?= \
 	--build-arg VCS_REF=$(GIT_REVISION) \
 	--build-arg PROJECT_VERSION=$(VERSION_FULL)
 
-# Images are either defined under `images/<name>/`, or in the UI and Operator
+# Images are either defined under `images/<name>/`, or in the Operator
 # sources.
-# UI and Operator images deserve special treatment and are thus handled
-# separately.
+# Operator image deserve special treatment and is thus handled separately.
 STD_IMAGES := $(notdir $(wildcard $(IMAGES_SRC)/*))
 
 # Image targets and their order of execution is controlled using indicator
@@ -74,30 +72,8 @@ images: build_images save_images dedup_images gen_registry_config
 .PHONY: images
 
 # Build container images
-build_images: build_ui build_operator build_std_images
+build_images: build_operator build_std_images
 .PHONY: build_images
-
-# Build UI image
-UI_IMG_NAME ?= $(PRODUCT_LOWERNAME)-ui
-UI_BUILD_TARGET = $(call _built_tgt,$(UI_IMG_NAME))
-build_ui: $(UI_BUILD_TARGET)
-.PHONY: build_ui
-
-UI_IMG_DEPS := $(shell find $(UI_SRC) \
-	-path "$(UI_SRC)/deploy" -prune -or \
-	-path "$(UI_SRC)/node_modules" -prune -or \
-	-type f \
-	-not -name ".*" -and \
-	-not -name "Dockerfile" -and \
-	-not -name "README.md" \
-	-print \
-)
-$(UI_BUILD_TARGET): $(UI_SRC)/Dockerfile $(UI_IMG_DEPS)
-	@echo Building UI image "$(UI_IMG_NAME):$(VERSION_FULL)"...
-	@mkdir -p $(@D)
-	docker build -t $(UI_IMG_NAME):$(VERSION_FULL) $(BUILD_ARGS) $(<D)
-	@touch $@
-	@echo Built UI image.
 
 # Build Operator image
 OPERATOR_IMG_NAME ?= $(PRODUCT_LOWERNAME)-operator
@@ -137,7 +113,7 @@ $(BUILD_ROOT)/images/%/.built: $(IMAGES_SRC)/%/*
 
 
 # Save images as layers with skopeo
-ALL_IMG_NAMES = $(STD_IMAGES) $(OPERATOR_IMG_NAME) $(UI_IMG_NAME)
+ALL_IMG_NAMES = $(STD_IMAGES) $(OPERATOR_IMG_NAME)
 IMG_SAVE_TARGETS = $(foreach img,$(ALL_IMG_NAMES),$(call _saved_tgt,$(img)))
 
 save_images: $(IMG_SAVE_TARGETS) | build_images
@@ -184,21 +160,6 @@ $(ISO_ROOT)/registry-config.inc.j2: $(BUILD_ROOT)/images/.deduplicated
 
 # }}}
 # Files to copy into the build tree {{{
-
-# UI manifests
-UI_MANIFESTS := $(wildcard $(UI_SRC)/deploy/*.yaml)
-UI_TARGETS := $(subst $(UI_SRC)/deploy,$(ISO_ROOT)/ui,$(UI_MANIFESTS))
-
-ui: $(UI_TARGETS)
-.PHONY: ui
-
-$(ISO_ROOT)/ui/%.yaml: $(UI_SRC)/deploy/%.yaml $(PWD)/VERSION
-	@echo Render $< into $@.
-	@mkdir -p $(@D)
-	@sed \
-		-e 's/@VERSION@/$(VERSION_FULL)/' \
-		-e 's/@REPOSITORY@/{{ repository }}/' \
-		$< > $@
 
 # Operator manifests
 OPERATOR_MANIFESTS := $(wildcard \

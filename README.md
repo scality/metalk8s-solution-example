@@ -21,8 +21,8 @@ including:
 - `make images`, to build, save, and deduplicate image layers
 - `make`, or `make all`, to generate the contents of the ISO without building
   the ISO itself (visible under `_build/root`)
-- `make operator` and `make ui`, to generate/copy the various Kubernetes
-  manifests used to deploy the Operator and the UI, respectively
+- `make operator`, to generate/copy the various Kubernetes manifests used to
+  deploy the Operator.
 
 **Note**: if within `$GOPATH/src`, you need to enable Go modules:
 `GO111MODULE=on make [<target> ...]`.
@@ -34,4 +34,3 @@ including:
 [MetalK8s]:     https://github.com/scality/metalk8s/
 [Operator SDK]: https://github.com/operator-framework/operator-sdk/
 [Skopeo]:       https://github.com/containers/skopeo/
-
