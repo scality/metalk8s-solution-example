@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Utility script to generate a Solution manifest from given arguments."""
 
