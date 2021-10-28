@@ -1,0 +1,75 @@
+name: Basic Tests
+
+on:
+  push:
+    branches:
+      - "user/**"
+      - "feature/**"
+      - "improvement/**"
+      - "bugfix/**"
+      - "documentation/**"
+      - "release/**"
+
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.13.1'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
+      - name: install configs
+        env:
+          OPERATOR_SDK_VERSION: v0.17.0
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y gcc hardlink make ca-certificates genisoimage
+          python3.6 -m pip install pyyaml --user
+
+          . /etc/os-release
+          echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+          curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get -y upgrade
+          sudo apt-get -y install skopeo
+
+          sudo curl -RLo /bin/operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu \
+          && sudo chmod +x /bin/operator-sdk
+      - name: Set Example Solution version property
+        id: production-version
+        run:  |
+          export PRODUCTION_VERSION_EXAMPLE=$(bash -c '. VERSION && echo "$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH$VERSION_SUFFIX"')
+          echo "::set-output name=PRODUCTION_VERSION_EXAMPLE::${PRODUCTION_VERSION_EXAMPLE}"
+      - name: Build Solution Example ISO
+        run: make iso
+      - name: copy files to artifacts
+        run: |
+          mkdir -p artifacts
+          cp -r _build/example-solution-${{ steps.production-version.outputs.PRODUCTION_VERSION_EXAMPLE }}.iso _build/SHA256SUM artifacts
+      - run: mkdir build_status && echo -n "SUCCESSFUL" > "build_status/.final_status"
+      - uses: scality/action-artifacts@v1
+        with:
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: artifacts, build_status
+          method: upload
+
+  if-failed:
+    runs-on: ubuntu-latest
+    needs: [ tests ]
+    if: always() && needs.tests.result == 'failure'
+    steps:
+      - run: mkdir build_status && echo -n "FAILED" > "build_status/.final_status"
+      - uses: scality/action-artifacts@v1
+        with:
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: build_status
+          method: upload
