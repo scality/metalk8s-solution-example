@@ -39,10 +39,17 @@ spec:
           spec:
             description: VersionServerSpec defines the desired state of VersionServer.
             properties:
-              foo:
-                description: Foo is an example field of VersionServer. Edit versionserver_types.go
-                  to remove/update
+              replicas:
+                description: Number of Pods to run for this VersionServer
+                format: int32
+                minimum: 1
+                type: integer
+              version:
+                description: The version of the container image to run
                 type: string
+            required:
+            - replicas
+            - version
             type: object
           status:
             description: VersionServerStatus defines the observed state of VersionServer.

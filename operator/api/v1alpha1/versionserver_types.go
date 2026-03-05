@@ -28,8 +28,12 @@ type VersionServerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of VersionServer. Edit versionserver_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	// Number of Pods to run for this VersionServer
+	Replicas int32 `json:"replicas"`
+
+	// The version of the container image to run
+	Version string `json:"version"`
 }
 
 // VersionServerStatus defines the observed state of VersionServer.
