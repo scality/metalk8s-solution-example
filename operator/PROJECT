@@ -19,4 +19,12 @@ resources:
   kind: VersionServer
   path: github.com/scality/metalk8s-solution-example/operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: metalk8s-solution-example.scality.com
+  kind: ClockServer
+  path: github.com/scality/metalk8s-solution-example/operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

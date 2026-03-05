@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/metalk8s-solution-example.scality.com_versionservers.yaml
+- bases/metalk8s-solution-example.scality.com_clockservers.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

@@ -22,6 +22,9 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the operator itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- clockserver_admin_role.yaml
+- clockserver_editor_role.yaml
+- clockserver_viewer_role.yaml
 - versionserver_admin_role.yaml
 - versionserver_editor_role.yaml
 - versionserver_viewer_role.yaml
