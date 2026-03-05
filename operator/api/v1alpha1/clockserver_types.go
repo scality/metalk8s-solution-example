@@ -28,8 +28,11 @@ type ClockServerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of ClockServer. Edit clockserver_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Timezone for this clock, in the format UTC[+/-]HH:MM
+	Timezone string `json:"timezone"`
+
+	// The version of the container image to run
+	Version string `json:"version"`
 }
 
 // ClockServerStatus defines the observed state of ClockServer.

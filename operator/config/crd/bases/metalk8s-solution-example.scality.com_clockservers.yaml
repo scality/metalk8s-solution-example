@@ -39,10 +39,15 @@ spec:
           spec:
             description: ClockServerSpec defines the desired state of ClockServer.
             properties:
-              foo:
-                description: Foo is an example field of ClockServer. Edit clockserver_types.go
-                  to remove/update
+              timezone:
+                description: Timezone for this clock, in the format UTC[+/-]HH:MM
                 type: string
+              version:
+                description: The version of the container image to run
+                type: string
+            required:
+            - timezone
+            - version
             type: object
           status:
             description: ClockServerStatus defines the observed state of ClockServer.
