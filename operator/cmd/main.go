@@ -249,8 +249,9 @@ func main() {
 	}
 
 	if err := (&controller.VersionServerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		OperatorConfig: operatorConfig,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "VersionServer")
 		os.Exit(1)
