@@ -1,15 +1,4 @@
-# Base image configuration
-# SHA256 digest of the image
-ARG EXAMPLE_IMAGE_SHA256=6ae4cddb2b37f889afd576a17a5286b311dcbf10a904409670827f6f9b50065e
-ARG EXAMPLE_IMAGE=docker.io/centos
-
-FROM ${EXAMPLE_IMAGE}@sha256:${EXAMPLE_IMAGE_SHA256}
-
-RUN yum install -y epel-release && yum update -y && yum clean all
-
-RUN yum install -y \
-        python36
-
+FROM gcr.io/distroless/python3-debian13:nonroot
 
 # Timestamp of the build, formatted as RFC3339
 ARG BUILD_DATE
@@ -53,4 +42,4 @@ LABEL maintainer="moonshot-platform@scality.com" \
 
 COPY server.py /app/
 
-ENTRYPOINT [ "python3", "/app/server.py" ]
+ENTRYPOINT [ "/app/server.py" ]
