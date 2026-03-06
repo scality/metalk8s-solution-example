@@ -21,6 +21,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -31,6 +32,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -43,6 +45,10 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
+const (
+	WATCH_NAMESPACE = "WATCH_NAMESPACE"
+)
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -53,6 +59,29 @@ func init() {
 
 	utilruntime.Must(metalk8ssolutionexamplescalitycomv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+}
+
+func getNamespaceCacheConfig() map[string]cache.Config {
+	watchNamespace := os.Getenv(WATCH_NAMESPACE)
+	if watchNamespace == "" {
+		setupLog.Info("WATCH_NAMESPACE is not set or empty, " +
+			"the manager will watch and manage resources in all namespaces")
+
+		return nil
+	}
+
+	// Setting the namespaces to watch. Can support one or multiple namespaces
+	// by setting the WATCH_NAMESPACE env variable to a comma separated list of
+	// namespaces. Leaving the WATCH_NAMESPACE env variable empty will make the
+	// manager watch resources in all namespaces.
+	namespaces := strings.Split(watchNamespace, ",")
+	namespaceCacheConfig := make(map[string]cache.Config, len(namespaces))
+
+	for _, ns := range namespaces {
+		namespaceCacheConfig[ns] = cache.Config{}
+	}
+
+	return namespaceCacheConfig
 }
 
 // nolint:gocyclo
@@ -199,6 +228,9 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "75105945.metalk8s-solution-example.scality.com",
+		Cache: cache.Options{
+			DefaultNamespaces: getNamespaceCacheConfig(),
+		},
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
