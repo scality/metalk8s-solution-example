@@ -1,0 +1,7 @@
+## Append samples of your project ##
+resources:
+- v1alpha1_versionserver.yaml
+- _v1alpha1_versionserver.yaml
+- v1alpha1_clockserver.yaml
+- _v1alpha1_clockserver.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

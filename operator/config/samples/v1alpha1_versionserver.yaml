@@ -1,0 +1,10 @@
+apiVersion: metalk8s-solution-example.scality.com/v1alpha1
+kind: VersionServer
+metadata:
+  labels:
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/managed-by: kustomize
+  name: versionserver-sample
+spec:
+  replicas: 3
+  version: 1.1.0-dev

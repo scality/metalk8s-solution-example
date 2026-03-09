@@ -1,0 +1,47 @@
+name: "Build"
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive &&
+          sudo apt-get update &&
+          sudo apt-get install -y yq genisoimage make
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build ISO
+        run: make iso
+      - name: copy files to artifacts
+        run: |
+          mkdir -p artifacts
+          cp -r _build/example-solution-*.iso _build/SHA256SUM artifacts
+      - uses: scality/action-artifacts@v4
+        with:
+          url: https://artifacts.scality.net
+          user: ${{ secrets.ARTIFACTS_USER }}
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          source: artifacts
+          method: upload
+
+  write-final-status:
+    runs-on: ubuntu-24.04
+    needs:
+        - build
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Upload final status
+        if: always()
+        uses: scality/actions/upload_final_status@1.17.0
+        with:
+          ARTIFACTS_USER: ${{ secrets.ARTIFACTS_USER }}
+          ARTIFACTS_PASSWORD: ${{ secrets.ARTIFACTS_PASSWORD }}
+          JOBS_RESULTS: ${{ join(needs.*.result) }}
