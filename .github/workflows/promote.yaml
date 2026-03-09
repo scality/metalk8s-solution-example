@@ -25,6 +25,7 @@ jobs:
         with:
           method: promote
           url: https://artifacts.scality.net
+          name: ${{ needs.build.outputs.artifact-name }}
           tag: ${{ github.ref_name }}
           user: ${{ secrets.ARTIFACTS_USER }}
           password: ${{ secrets.ARTIFACTS_PASSWORD }}
@@ -42,9 +43,9 @@ jobs:
           ref: ${{ github.ref }}
       - name: Retrieve ISO from artifacts
         run: >
-          curl --fail -LO -u ${{ secrets.ARTIFACTS_USER }}:${{ secrets.ARTIFACTS_PASSWORD }}
+          curl --fail -L --remote-name-all -u ${{ secrets.ARTIFACTS_USER }}:${{ secrets.ARTIFACTS_PASSWORD }}
           ${{ needs.promote-artifacts.outputs.artifact-link }}/example-solution-${{ github.ref_name }}.iso
-           ${{ needs.promote-artifacts.outputs.artifact-link }}/SHA256SUM
+          ${{ needs.promote-artifacts.outputs.artifact-link }}/SHA256SUM
       - uses: softprops/action-gh-release@v2
         with:
           name: MetalK8s Example Solution ${{ github.ref_name }}
