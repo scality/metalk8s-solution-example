@@ -25,6 +25,7 @@ jobs:
         with:
           method: promote
           url: https://artifacts.scality.net
+          name: ${{ needs.build.outputs.artifact-name }}
           tag: ${{ github.ref_name }}
           user: ${{ secrets.ARTIFACTS_USER }}
           password: ${{ secrets.ARTIFACTS_PASSWORD }}
