@@ -41,8 +41,6 @@ DOCKER ?= docker
 DOCKER_OPTS ?=
 DOCKER_SOCKET ?= unix:///var/run/docker.sock
 HARDLINK ?= hardlink
-OPERATOR_SDK ?= operator-sdk
-OPERATOR_SDK_OPTS ?=
 SKOPEO ?= skopeo
 SKOPEO_OPTS ?= --override-os linux --insecure-policy
 REGISTRY_SCRIPT ?= \
@@ -81,20 +79,13 @@ OPERATOR_BUILD_TARGET = $(call _built_tgt,$(OPERATOR_IMG_NAME))
 build_operator: $(OPERATOR_BUILD_TARGET)
 .PHONY: build_operator
 
-OPERATOR_IMG_DEPS := $(shell find $(OPERATOR_SRC) \
-	-path "$(OPERATOR_SRC)/deploy" -prune -or \
-	-path "$(OPERATOR_SRC)/build/_output" -prune -or \
-	-type f -not -name ".*" -print \
-)
 OPERATOR_BUILD_ARGS ?= \
-	--go-build-args "-ldflags -X=operator/version.Version=$(VERSION_FULL)"
+	--build-arg VERSION=$(VERSION_FULL)
 
-$(OPERATOR_BUILD_TARGET): $(OPERATOR_IMG_DEPS)
+$(OPERATOR_BUILD_TARGET):
 	@echo Building Operator image "$(OPERATOR_IMG_NAME):$(VERSION_FULL)"...
 	@mkdir -p $(@D)
-	cd $(OPERATOR_SRC) && \
-		$(OPERATOR_SDK) $(OPERATOR_SDK_OPTS) build $(OPERATOR_BUILD_ARGS) \
-		$(OPERATOR_IMG_NAME):$(VERSION_FULL)
+	$(DOCKER) $(DOCKER_OPTS) build -t $(OPERATOR_IMG_NAME):$(VERSION_FULL) $(OPERATOR_BUILD_ARGS) $(OPERATOR_SRC)
 	@touch $@
 	@echo Built Operator image.
 
@@ -162,21 +153,24 @@ $(ISO_ROOT)/registry-config.inc.j2: $(BUILD_ROOT)/images/.deduplicated
 # Files to copy into the build tree {{{
 
 # Operator manifests
-OPERATOR_MANIFESTS := $(wildcard \
-	$(OPERATOR_SRC)/deploy/*.yaml \
-	$(OPERATOR_SRC)/deploy/crds/*.yaml \
-)
-OPERATOR_TARGETS := \
-	$(subst $(OPERATOR_SRC),$(ISO_ROOT)/operator,$(OPERATOR_MANIFESTS))
+CRD_DEST := $(ISO_ROOT)/operator/deploy/crds
 
-operator: $(OPERATOR_TARGETS)
-.PHONY: operator
+generate_crds:
+	@mkdir -p $(CRD_DEST)
+	@rm -f $(CRD_DEST)/*.yaml
+	kustomize build $(OPERATOR_SRC)/config/crd -o $(CRD_DEST)
+	@for f in $(CRD_DEST)/*.yaml; do \
+		mv "$$f" "$${f%.yaml}_crd.yaml"; \
+	done
+.PHONY: generate_crds
 
-$(ISO_ROOT)/operator/%: $(OPERATOR_SRC)/%
-	@echo Copy "$<" to "$@".
+$(ISO_ROOT)/operator/deploy/role.yaml:
 	@mkdir -p $(@D)
 	@rm -f $@
-	@cp -a $< $@
+	kustomize build $(OPERATOR_SRC)/config/rbac | yq -y 'select(.kind == "Role" or .kind == "ClusterRole")' > $@
+
+operator: generate_crds $(ISO_ROOT)/operator/deploy/role.yaml
+.PHONY: operator
 
 # Solution manifest
 manifest: $(ISO_ROOT)/manifest.yaml
