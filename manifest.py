@@ -89,6 +89,9 @@ def build_manifest(args):
             )),
             'operator': {
                 'image': dict(zip(('name', 'tag'), args.operator_image)),
+                'metrics': {
+                    'enabled': True,
+                }
             },
             'version': args.version,
         },
