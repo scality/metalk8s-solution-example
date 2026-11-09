@@ -18,10 +18,12 @@ package controller
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -30,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	metalk8ssolutionexamplescalitycomv1alpha1 "github.com/scality/metalk8s-solution-example/operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
@@ -54,7 +55,9 @@ func TestControllers(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	logf.SetLogger(logr.FromSlogHandler(slog.NewTextHandler(GinkgoWriter, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})))
 
 	ctx, cancel = context.WithCancel(context.TODO())
 
